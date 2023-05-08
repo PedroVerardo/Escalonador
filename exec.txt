@@ -1,0 +1,10 @@
+Run <nome_programa> I=13 D=13
+Run <nome_programa>
+Run <nome_programa> I=13 D=13
+Run <nome_programa>
+Run <nome_programa> I=13 D=13
+Run <nome_programa> I=13 D=13
+Run <nome_programa>
+Run <nome_programa> I=13 D=13
+Run <nome_programa>
+Run <nome_programa> I=13 D=13
