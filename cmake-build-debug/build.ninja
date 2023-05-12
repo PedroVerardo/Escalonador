@@ -49,8 +49,8 @@ cmake_ninja_workdir = /home/pedro/CLionProjects/untitled/cmake-build-debug/
 
 build cmake_object_order_depends_target_untitled: phony || CMakeFiles/untitled.dir
 
-build CMakeFiles/untitled.dir/interpreter.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/interpreter.c || cmake_object_order_depends_target_untitled
-  DEP_FILE = CMakeFiles/untitled.dir/interpreter.c.o.d
+build CMakeFiles/untitled.dir/Queue.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/Queue.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/Queue.c.o.d
   FLAGS = -g -fdiagnostics-color=always -std=gnu11
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir
@@ -63,7 +63,7 @@ build CMakeFiles/untitled.dir/interpreter.c.o: C_COMPILER__untitled_Debug /home/
 #############################################
 # Link the executable untitled
 
-build untitled: C_EXECUTABLE_LINKER__untitled_Debug CMakeFiles/untitled.dir/interpreter.c.o
+build untitled: C_EXECUTABLE_LINKER__untitled_Debug CMakeFiles/untitled.dir/Queue.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/untitled.dir
   POST_BUILD = :
