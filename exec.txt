@@ -1,3 +1,6 @@
-Run p1
+Run p1 I=26 D=4
 Run p2
 Run p3
+Run p4 I=25 D=7
+Run p5 I=12 D=9
+Run p6

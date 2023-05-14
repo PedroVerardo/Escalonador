@@ -1,0 +1,1 @@
+gcc -Wall -o main main.c interpreter2.c scheduler.c ordered_list.c queue.c
