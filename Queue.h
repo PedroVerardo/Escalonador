@@ -1,24 +1,25 @@
-//
-// Created by pedro on 12/05/23.
-//
+//Estruturas
 
-#ifndef UNTITLED_QUEUE_H
-#define UNTITLED_QUEUE_H
+struct processo{
+    char process_name[100];
+    int tempo_ini;
+    int duracao;
+};
+typedef struct processo Processo;
 
 struct node {
-    int val;
+    Processo val;
     struct node *prox;
 };
 typedef struct node Node;
 
-Node *insereI(Node *lista, int val);
 
-void printa(Node *lista);
+//Funcoes
 
-Node *retira_elem(Node *lista, int val);
+Node *insereI(Node *lista, Processo val); //insere no inicio
 
-Node *retira(Node *lista);
+void printa(Node *lista); //printa elementos da fila
 
-int isempty(Node *lista);
+Node *retira(Node *lista, Node *removed); //retira o ultimo elemento da fila
 
-#endif //UNTITLED_QUEUE_H
+int isempty(Node *lista); //devolve se a fila está vazia

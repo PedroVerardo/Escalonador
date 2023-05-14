@@ -1,8 +1,10 @@
 all:
-	gcc -o round_robin round_robin.c
-	gcc -o real_time real_time.c
 	gcc -o main interpreter.c
 	./main
-queue:
-	gcc -Wall -o queue Queue.c
-	./queue
+c:
+	gcc -Wall -o esc escalonador.c Queue.c
+	./esc
+L:
+	gcc -o p1 p1.c
+	gcc -o p2 p2.c
+	gcc -o p3 p3.c

@@ -1,14 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-struct node {
-    int val;
-    struct node *prox;
-};
-typedef struct node Node;
+#include "Queue.h"
 
 
-Node *insereI(Node *lista, int val) {
+Node *insereI(Node *lista, Processo val) {
     Node *novo = (Node *)malloc(sizeof(Node));
 
     novo->val = val;
@@ -21,51 +16,44 @@ Node *insereI(Node *lista, int val) {
 
 
 void printa(Node *lista) {
-    printf("\n");
     for (Node *p = lista; p != NULL; p = p->prox) {
-        printf("%d ", p->val);
+        printf("%s ",p->val.process_name);
     }
     printf("\n");
 }
 
 
-Node *retira_elem(Node *lista, int val) {
+Node *retira(Node *lista, Node *removed){
     Node *ant = NULL;
+    Node *b = NULL;
     Node *p = lista;
+    Node acctual;
 
-    while (p != NULL && p->val != val) {
+    if(lista == NULL)
+    {
+        return lista;
+    }
+
+    while (p->prox != NULL) {
         ant = p;
         p = p->prox;
     }
 
-    if (p == NULL) {return lista;}
+    if(ant == NULL)
+    {
+        lista = p->prox;
+    }
 
-    if (ant == NULL) {lista = p->prox;}
+    else
+    {
+        ant->prox = NULL;
+    }
 
-    else {ant->prox = p->prox;}
-
+    *removed = *p;
     free(p);
+
+
     return lista;
-}
-
-
-Node *retira(Node *lista){
-    Node *ant = NULL;
-    Node *p = lista;
-
-    if(lista == NULL){
-        return NULL;
-    }
-
-    while (p != NULL) {
-        ant = p;
-        p = p->prox;
-        if(p->prox == NULL){
-            ant->prox = NULL;
-            free(p);
-            return lista;
-        }
-    }
 }
 
 

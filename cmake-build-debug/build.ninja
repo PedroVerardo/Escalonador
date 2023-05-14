@@ -55,6 +55,42 @@ build CMakeFiles/untitled.dir/Queue.c.o: C_COMPILER__untitled_Debug /home/pedro/
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir
 
+build CMakeFiles/untitled.dir/escalonador.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/escalonador.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/escalonador.c.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir
+
+build CMakeFiles/untitled.dir/LinkedList.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/LinkedList.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/LinkedList.c.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir
+
+build CMakeFiles/untitled.dir/p1.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/p1.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/p1.c.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir
+
+build CMakeFiles/untitled.dir/p2.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/p2.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/p2.c.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir
+
+build CMakeFiles/untitled.dir/p3.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/p3.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/p3.c.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir
+
+build CMakeFiles/untitled.dir/bago.c.o: C_COMPILER__untitled_Debug /home/pedro/CLionProjects/untitled/bago.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/bago.c.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target untitled
@@ -63,7 +99,7 @@ build CMakeFiles/untitled.dir/Queue.c.o: C_COMPILER__untitled_Debug /home/pedro/
 #############################################
 # Link the executable untitled
 
-build untitled: C_EXECUTABLE_LINKER__untitled_Debug CMakeFiles/untitled.dir/Queue.c.o
+build untitled: C_EXECUTABLE_LINKER__untitled_Debug CMakeFiles/untitled.dir/Queue.c.o CMakeFiles/untitled.dir/escalonador.c.o CMakeFiles/untitled.dir/LinkedList.c.o CMakeFiles/untitled.dir/p1.c.o CMakeFiles/untitled.dir/p2.c.o CMakeFiles/untitled.dir/p3.c.o CMakeFiles/untitled.dir/bago.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/untitled.dir
   POST_BUILD = :
