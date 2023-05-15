@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include "data_structures.h"
 
@@ -35,6 +36,9 @@ int main() {
     } else { // Interpretador
         interpreter(process_data);
     }
+
+    int status;
+    waitpid(-1, &status, 0);
 
     if (shmdt(process_data) == -1) {
         printf("Error: shmdt failed\n");

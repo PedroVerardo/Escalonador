@@ -7,7 +7,7 @@ Node* initialize_list() {
     return NULL;
 }
 
-void insert_ordered(Node **head, Process *new_process) {
+Node* insert_ordered(Node **head, Process *new_process) {
     Node *new_node = (Node *)malloc(sizeof(Node));
     if (!new_node) {
         perror("malloc");
@@ -27,6 +27,7 @@ void insert_ordered(Node **head, Process *new_process) {
         new_node->next = current->next;
         current->next = new_node;
     }
+    return new_node;
 }
 
 void print_list(Node *head) {

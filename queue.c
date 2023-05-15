@@ -4,15 +4,16 @@
 
 void initialize(Queue *queue) {
     queue->front = 0;
-    queue->rear = -1;
+    queue->rear = 0;
+    queue->size = 0;
 }
 
 int is_empty(Queue *queue) {
-    return queue->front > queue->rear;
+    return queue->size == 0;
 }
 
 int is_full(Queue *queue) {
-    return queue->rear == MAX_PROCESS_COUNT - 1;
+    return queue->size == MAX_PROCESS_COUNT;
 }
 
 void enqueue(Queue *queue, Process* value) {
@@ -20,7 +21,9 @@ void enqueue(Queue *queue, Process* value) {
         printf("Error: Queue is full\n");
         exit(1);
     }
-    queue->arr[++queue->rear] = value;
+    queue->arr[queue->rear] = value;
+    queue->rear = (queue->rear + 1) % MAX_PROCESS_COUNT;
+    queue->size++;
 }
 
 Process* dequeue(Queue *queue) {
@@ -28,7 +31,10 @@ Process* dequeue(Queue *queue) {
         printf("Error: Queue is empty\n");
         exit(1);
     }
-    return queue->arr[queue->front++];
+    Process* value = queue->arr[queue->front];
+    queue->front = (queue->front + 1) % MAX_PROCESS_COUNT;
+    queue->size--;
+    return value;
 }
 
 void printQueue(Queue *queue) {
@@ -39,8 +45,13 @@ void printQueue(Queue *queue) {
 
     printf("Queue elements:\n");
 
-    for (int i = queue->front; i <= queue->rear; i++) {
+    int count = queue->size;
+    int i = queue->front;
+
+    while (count > 0) {
         printf("Element %d: %s\n", i, queue->arr[i]->name);
+        i = (i + 1) % MAX_PROCESS_COUNT;
+        count--;
     }
 }
 

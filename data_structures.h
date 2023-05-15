@@ -8,7 +8,7 @@ typedef struct Node {
 } Node;
 
 Node* initialize_list();
-void insert_ordered(Node **head, Process *new_process);
+Node* insert_ordered(Node **head, Process *new_process);
 void print_list(Node *head);
 Node* get_next_process(Node* head, Node* element);
 
@@ -18,6 +18,7 @@ typedef struct Queue {
     Process* arr[MAX_PROCESS_COUNT];
     int front;
     int rear;
+    int size;
 } Queue;
 
 void initialize(Queue *queue);

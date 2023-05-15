@@ -16,6 +16,46 @@ Node* realTime;
 Node* next_realTime;
 Process* current_process;
 
+void runNextRealTime();
+void runNextRoundRobin(int second_reference);
+
+void P(char* nome) {
+    printf("[PROCESSO %s] iniciado execucao\n", nome);
+    while(1){}
+}
+
+// função para saber se o realtime recem escalonado deve ser o próximo da lista
+Node* get_closer(int time_reference, Node* p1, Node* p2) {
+    
+    // o p2 é o recém inserido
+    // o p1 é o next e pode ser null
+    if (!p1)
+        return p2;
+
+    int n1 = p1->process->initial_time;
+    int n2 = p2->process->initial_time;
+    int t1 = time_reference;
+    int t2 = time_reference;
+
+    if (t1 > n1)
+        n1 += 60;
+    
+    if (t2 > n2)
+        n2 += 60;
+
+    int diff1 = n1 - t1;
+    int diff2 = n2 - t2;
+
+    printf("diff1 = %d, diff2 = %d\n", diff1, diff2);
+
+    if (diff1 >= diff2)
+        return p2;
+
+    return p1;
+}
+
+
+
 //this function return true if the process can be sheduled.
 int possibleToScheduled(Node* head, Process real_time_process){
     if(head == NULL){
@@ -67,9 +107,23 @@ Process* createCopy(Process* original) {
     return copy;
 }
 
-void updateRunningProcess(int minute_reference) {
+void updateRunningProcess(int second_reference) {
+    if (!current_process) {
+        if (next_realTime) {
+            if (next_realTime->process->initial_time == second_reference) {
+                // se temos um real time para começar
+                runNextRealTime();
+                return;
+            }
+        }
+        if (!is_empty(&roundRobin)) {
+            runNextRoundRobin(second_reference);;
+        }   
+        return;     
+    }
+        
 
-    if (current_process->end_time == minute_reference) {
+    if (current_process->end_time == second_reference) {
         // precisamos escolher o novo processo a ser executado
 
         // stop o current process
@@ -84,37 +138,43 @@ void updateRunningProcess(int minute_reference) {
         }
 
 
-        if (next_realTime->process->initial_time == minute_reference) {
+        if (next_realTime->process->initial_time == second_reference) {
             // se temos um real time para começar
-            // rodar o next_realtime
-            if (kill(next_realTime->process->pid, SIGCONT) == -1) {
-                printf("Erro no sinal SIGCONT");
-                exit(1);
-            }
-            printf("[ESCALONADOR] executando o processo %s (real time)", next_realTime->process->name);
-
-            // Atulizar o next_realtime e o processo corrente
-            current_process = next_realTime->process;
-            next_realTime = get_next_process(realTime, next_realTime);
-
+            runNextRealTime();
         } else {
-
-            // rodar proximo da fila roundrobin
-            Process* first_roundRobin = dequeue(&roundRobin);
-            if (kill(first_roundRobin->pid, SIGCONT) == -1) {
-                printf("Erro no sinal SIGCONT");
-                exit(1);
-            }
-            printf("[ESCALONADOR] executando o processo %s (round robin)", first_roundRobin->name);
-
-            // o round robin tem um minuto para executar
-            first_roundRobin->end_time = (minute_reference + 1) % 60;
-            current_process = first_roundRobin;
+            runNextRoundRobin(second_reference);
         }
     }
 }
 
-void schedule(Process *process_data, pid_t pid) {
+void runNextRealTime() {
+    // rodar o next_realtime
+    printf("[ESCALONADOR] executando o processo %s (real time)\n", next_realTime->process->name);
+    if (kill(next_realTime->process->pid, SIGCONT) == -1) {
+        printf("Erro no sinal SIGCONT");
+        exit(1);
+    }
+
+    // Atulizar o next_realtime e o processo corrente
+    current_process = next_realTime->process;
+    next_realTime = get_next_process(realTime, next_realTime);
+}
+
+void runNextRoundRobin(int second_reference) {
+    // rodar proximo da fila roundrobin
+    Process* first_roundRobin = dequeue(&roundRobin);
+    printf("[ESCALONADOR] executando o processo %s (round robin)\n", first_roundRobin->name);
+    if (kill(first_roundRobin->pid, SIGCONT) == -1) {
+        printf("Erro no sinal SIGCONT");
+        exit(1);
+    }
+
+    // o round robin tem um minuto para executar
+    first_roundRobin->end_time = (second_reference + 1) % 60;
+    current_process = first_roundRobin;
+}
+
+void schedule(Process *process_data, pid_t pid, int second_reference) {
 
     process_data->pid = pid;
     process_data->already_scheduled = 1;
@@ -127,11 +187,14 @@ void schedule(Process *process_data, pid_t pid) {
 
     } else { // real time
         if(!possibleToScheduled(realTime, *process_data)){
-            printf("[ESCALONADOR] nao foi possivel alocar %s na fila de prontos real time\n", process_data->name);
+            printf("[ESCALONADOR] [TEMPOS INCOMPATIVEIS] nao foi possivel alocar %s na fila de prontos real time\n", process_data->name);
         }
         else{
             printf("[ESCALONADOR] alocando %s na fila de prontos real time\n", process_data->name);
-            insert_ordered(&realTime, new_process);
+            // precisamos ajustar o próximo real time a ser executado;
+            
+            Node* inserted = insert_ordered(&realTime, new_process);
+            next_realTime = get_closer(second_reference, next_realTime, inserted);
         }
     }
 }
@@ -139,12 +202,25 @@ void schedule(Process *process_data, pid_t pid) {
 void scheduler(Process* process_data) {
     pid_t pid;
     struct timeval current_time;
-    int minute_reference;
+    int second_reference;
+    int current_second;
 
     initialize(&roundRobin);
     realTime = initialize_list();
 
     while (1) {
+
+        if (gettimeofday(&current_time, NULL) == -1) {
+            printf("Erro na verificação do horário");
+            exit(1);
+        }
+        second_reference = current_time.tv_sec % 60;
+
+        if (current_second != second_reference){
+            printf("[CLOCK] segundo atual = %d\n", second_reference);
+            current_second = second_reference;
+        } 
+
         // se o programa ainda não tiver sido tratado pelo escalonador
         // criamos um novo processo para executar o programa
         if (!process_data->already_scheduled) {
@@ -153,38 +229,32 @@ void scheduler(Process* process_data) {
                 printf("Erro na criação de novo processo");
                 exit(1);
             } else if (pid > 0) { // escalonador
+                schedule(process_data, pid, second_reference);
 
-                if (kill(pid, SIGSTOP) == -1) {
-                    printf("Erro no sinal SIGSTOP");
-                    exit(1);
-                }
-                schedule(process_data, pid);
-
-                if (!current_process) {
-                    // primeiro processo de todos
-                    // continue;
-                    // printf("oioi\n");
+                if (!current_process && !next_realTime) {
+                    // se for o primeiro processo de todos
+                    if (process_data->initial_time == -1) {
+                        // caso seja um round robin
+                        runNextRoundRobin(second_reference);
+                    } else {
+                        // caso seja um real time
+                        next_realTime = realTime;
+                    }
                 }
                 
             } else { // novo processo
-
-                char* program = process_data->name;
-                char* arguments[] = {program, NULL};
-                char* executable = "./";
-                strcat(executable, program);
-                execvp(executable, arguments);
-                exit(1);
+                // o processo coloca a si mesmo em pausa até que o escalonador o escalone
+                Process* self_information = createCopy(process_data);
+                if (kill(getpid(), SIGSTOP) == -1) {
+                    printf("Erro no sinal SIGSTOP");
+                    exit(1);
+                }
+                P(self_information->name);
             }
                 
         }
-
-        if (gettimeofday(&current_time, NULL) == -1) {
-            printf("Erro na verificação do horário");
-            exit(1);
-        }
-
-        minute_reference = current_time.tv_sec % 60;  
-        // updateRunningProcess(minute_reference);
+  
+        updateRunningProcess(second_reference);
         
     }
 
