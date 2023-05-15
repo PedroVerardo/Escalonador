@@ -16,6 +16,38 @@ Node* realTime;
 Node* next_realTime;
 Process* current_process;
 
+//this function return true if the process can be sheduled.
+int possibleToScheduled(Node* head, Process real_time_process){
+    if(head == NULL){
+        return 1;
+    }
+    Node* current = head;
+    int time_ini;
+    int time_end;
+
+    while(current != NULL){
+        time_ini = current->process->initial_time;
+        time_end = current->process->end_time;
+
+        if(real_time_process.initial_time >= time_ini
+            && real_time_process.initial_time < time_end){
+            return 0;
+        }
+
+        if(real_time_process.end_time >= time_ini
+            && real_time_process.end_time < time_end){
+            return 0;
+        }
+
+        if(real_time_process.initial_time < time_ini
+            && real_time_process.end_time > time_end){
+            return 0;
+        }
+        current = current->next;
+    }
+    return 1;
+}
+
 Process* createCopy(Process* original) {
     // Allocate memory for the new struct
     Process* copy = (Process*)malloc(sizeof(Process));
@@ -94,8 +126,13 @@ void schedule(Process *process_data, pid_t pid) {
         enqueue(&roundRobin, new_process);
 
     } else { // real time
-        printf("[ESCALONADOR] alocando %s na fila de prontos real time\n", process_data->name);
-        insert_ordered(&realTime, new_process);
+        if(!possibleToScheduled(realTime, *process_data)){
+            printf("[ESCALONADOR] nao foi possivel alocar %s na fila de prontos real time\n", process_data->name);
+        }
+        else{
+            printf("[ESCALONADOR] alocando %s na fila de prontos real time\n", process_data->name);
+            insert_ordered(&realTime, new_process);
+        }
     }
 }
 
