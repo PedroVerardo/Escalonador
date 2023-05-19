@@ -19,9 +19,18 @@ Process* current_process;
 void runNextRealTime();
 void runNextRoundRobin(int second_reference);
 
-void P(char* nome) {
-    printf("[PROCESSO %s] iniciado execucao\n", nome);
-    while(1){}
+void P(char* name) {
+    struct timeval start, current;
+    printf("[PROCESSO %s] iniciado execucao\n", name);
+    gettimeofday(&start, NULL);
+    while(1){
+        gettimeofday(&current, NULL);
+        double elapsed = (current.tv_sec - start.tv_sec) + (current.tv_usec - start.tv_usec) / 1000000.0;
+        if (elapsed >= 0.5) {
+            printf("[PROCESSO %s] executando\n", name);
+            gettimeofday(&start, NULL);
+        }
+    }
 }
 
 // função para saber se o realtime recem escalonado deve ser o próximo da lista
@@ -46,7 +55,7 @@ Node* get_closer(int time_reference, Node* p1, Node* p2) {
     int diff1 = n1 - t1;
     int diff2 = n2 - t2;
 
-    printf("diff1 = %d, diff2 = %d\n", diff1, diff2);
+    // printf("diff1 = %d, diff2 = %d\n", diff1, diff2);
 
     if (diff1 >= diff2)
         return p2;
@@ -245,11 +254,9 @@ void scheduler(Process* process_data) {
             } else { // novo processo
                 // o processo coloca a si mesmo em pausa até que o escalonador o escalone
                 Process* self_information = createCopy(process_data);
-                if (kill(getpid(), SIGSTOP) == -1) {
-                    printf("Erro no sinal SIGSTOP");
-                    exit(1);
-                }
-                P(self_information->name);
+                char *programPath = "./new_process";  // Path to the program you want to execute
+                char *args[] = {programPath, self_information->name, NULL};  // Arguments for the program, terminated with NULL
+                execvp(programPath, args);
             }
                 
         }
