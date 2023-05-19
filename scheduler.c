@@ -5,6 +5,7 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <pthread.h>
 #include <string.h>
 #include <sys/time.h>
 #include <signal.h>
@@ -17,6 +18,7 @@ Node* next_realTime;
 Process* current_process;
 
 int io_process = 0;
+Process *p;
 
 void runNextRealTime();
 void runNextRoundRobin(int second_reference);
@@ -214,21 +216,31 @@ void handler(int signum){
     io_process = 1;
 }
 
+void* io(void* second_reference) {
+    
+    printf("[ESCALONADOR]aguardando i/o");
+    sleep(3);
+    schedule(p, p->pid, *(int*)second_reference);
+    pthread_exit(NULL);
+
+    return NULL;
+}
+
 void scheduler(Process* process_data) {
-    pid_t pid;
-    char* format;
-    pid_t actual_process = getpid();
-    Process *p;
+    char format[1];
     struct timeval current_time;
     int second_reference;
     int current_second;
     int contador = 0;
-    int io_cont = 0;
+    pid_t pid;
+    pid_t actual_process = getpid();
+    process_data->father = actual_process;
+    pthread_t io_thread;
+    void *result;
 
-    // Compartilhar o pid do pai
-    int shm_pid_id = shmget(5000, sizeof(pid_t), IPC_CREAT | 0666);
-    pid_t *pai = (pid_t*) shmat(shm_pid_id, NULL, 0);
-    pai[0] = actual_process;
+    //cria thread
+    pthread_create(&io_thread, NULL, io, &second_reference);
+    
 
     initialize(&roundRobin);
     realTime = initialize_list();
@@ -236,7 +248,6 @@ void scheduler(Process* process_data) {
     signal(SIGUSR1, handler);
 
     while (1) {
-        contador++;
         if (gettimeofday(&current_time, NULL) == -1) {
             printf("Erro na verificação do horário");
             exit(1);
@@ -252,13 +263,9 @@ void scheduler(Process* process_data) {
         if (io_process){
             p = dequeue(&roundRobin);
             kill(p->pid, SIGSTOP);
-            printf("\n\noi\n\n");
-            if(io_cont == 3){
-                io_cont = 0;
-                io_process = 0;
-                schedule(p, p->pid, second_reference);
-            }
-            io_cont++;
+            //printf("\n\noi\n\n");
+            io_process = 0;
+            pthread_join(io_thread, result);
         }
 
         // se o programa ainda não tiver sido tratado pelo escalonador
@@ -284,15 +291,11 @@ void scheduler(Process* process_data) {
                 
             } else { // novo processo
                 // o processo coloca a si mesmo em pausa até que o escalonador o escalone
+                contador++;
                 Process* self_information = createCopy(process_data);
                 char *programPath = "./new_process";  // Path to the program you want to execute
-                if (contador == 2){
-                    format = "1";
-                }
-                else{
-                    format = "0";
-                }
-                char *args[] = {programPath, self_information->name, format, NULL};  // Arguments for the program, terminated with NULL
+                
+                char *args[] = {programPath, self_information->name, NULL};  // Arguments for the program, terminated with NULL
                 execvp(programPath, args);
             }
                 

@@ -12,4 +12,5 @@ typedef struct {
     // flag para verificar se já escalonamos o programa
     int already_scheduled; 
     pid_t pid;
+    pid_t father;
 } Process;
