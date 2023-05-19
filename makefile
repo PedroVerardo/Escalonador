@@ -1,5 +1,6 @@
 all:
 	gcc -Wall -o main main.c interpreter2.c scheduler.c ordered_list.c queue.c
+	gcc -Wall -o new_process new_process.c
 	./main
 L:
 	gcc -o p1 p1.c

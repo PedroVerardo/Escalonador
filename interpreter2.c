@@ -38,6 +38,7 @@ void interpreter(Process* process_data) {
 
         number_parameters = fscanf(process_file, "Run %s I=%d D=%d\n", program_name, &initial_time, &duration);
 
+        sleep(1);
         if (number_parameters == 1) {
             // processo round robin
             printf("[INTERPRETADOR] O processo %s (round robin) foi recebido\n", program_name);

@@ -11,9 +11,9 @@
 #define SHM_KEY 1235
 
 int main() {
-
     // Obtendo a área de memória compartilhada
     int shm_id = shmget(SHM_KEY, sizeof(Process), IPC_CREAT | 0666);
+
     if (shm_id == -1) {
         printf("Error: shmget failed bla bls\n");
         exit(1);

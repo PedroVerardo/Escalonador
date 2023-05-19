@@ -16,6 +16,8 @@ Node* realTime;
 Node* next_realTime;
 Process* current_process;
 
+int io_process = 0;
+
 void runNextRealTime();
 void runNextRoundRobin(int second_reference);
 
@@ -208,17 +210,33 @@ void schedule(Process *process_data, pid_t pid, int second_reference) {
     }
 }
 
+void handler(int signum){
+    io_process = 1;
+}
+
 void scheduler(Process* process_data) {
     pid_t pid;
+    char* format;
+    pid_t actual_process = getpid();
+    Process *p;
     struct timeval current_time;
     int second_reference;
     int current_second;
+    int contador = 0;
+    int io_cont = 0;
+
+    // Compartilhar o pid do pai
+    int shm_pid_id = shmget(5000, sizeof(pid_t), IPC_CREAT | 0666);
+    pid_t *pai = (pid_t*) shmat(shm_pid_id, NULL, 0);
+    pai[0] = actual_process;
 
     initialize(&roundRobin);
     realTime = initialize_list();
 
-    while (1) {
+    signal(SIGUSR1, handler);
 
+    while (1) {
+        contador++;
         if (gettimeofday(&current_time, NULL) == -1) {
             printf("Erro na verificação do horário");
             exit(1);
@@ -228,7 +246,20 @@ void scheduler(Process* process_data) {
         if (current_second != second_reference){
             printf("[CLOCK] segundo atual = %d\n", second_reference);
             current_second = second_reference;
-        } 
+        }
+
+        //code part to handle the io process
+        if (io_process){
+            p = dequeue(&roundRobin);
+            kill(p->pid, SIGSTOP);
+            printf("\n\noi\n\n");
+            if(io_cont == 3){
+                io_cont = 0;
+                io_process = 0;
+                schedule(p, p->pid, second_reference);
+            }
+            io_cont++;
+        }
 
         // se o programa ainda não tiver sido tratado pelo escalonador
         // criamos um novo processo para executar o programa
@@ -255,7 +286,13 @@ void scheduler(Process* process_data) {
                 // o processo coloca a si mesmo em pausa até que o escalonador o escalone
                 Process* self_information = createCopy(process_data);
                 char *programPath = "./new_process";  // Path to the program you want to execute
-                char *args[] = {programPath, self_information->name, NULL};  // Arguments for the program, terminated with NULL
+                if (contador == 2){
+                    format = "1";
+                }
+                else{
+                    format = "0";
+                }
+                char *args[] = {programPath, self_information->name, format, NULL};  // Arguments for the program, terminated with NULL
                 execvp(programPath, args);
             }
                 
@@ -266,3 +303,5 @@ void scheduler(Process* process_data) {
     }
 
 }
+
+
