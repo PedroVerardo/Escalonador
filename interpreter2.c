@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "process_structure.h"
 #include "interpreter.h"
 
@@ -10,9 +11,16 @@ Process* getProcessData(char* process_name, int initial_time, int duration) {
     strcpy(process->name, process_name);
     process->initial_time = initial_time;
     if (initial_time == -1) {
+
         process->end_time = duration;
+        // definindo aleatoriamente se o processo robin round é IO bounded ou não
+        srand(time(NULL));
+        int random_boolean = rand() % 2;
+        process->is_IO_bounded = random_boolean;
+
     } else {
         process->end_time = initial_time + duration;
+        process->is_IO_bounded = 0;
     }
     process->already_scheduled = 0;
     process->is_running = 0;
@@ -42,6 +50,8 @@ void interpreter(Process* process_data) {
             // processo round robin
             printf("[INTERPRETADOR] O processo %s (round robin) foi recebido\n", program_name);
             current_process = getProcessData(program_name, -1, -1);
+            if (current_process->is_IO_bounded)
+                printf("[INTERPRETADOR] O processo %s (round robin) é IO bounded\n", program_name);
         } else if (number_parameters == 3) {
             // processo real time
             printf("[INTERPRETADOR] O processo %s (real time com I=%d e D=%d) foi recebido\n", program_name, initial_time, duration);

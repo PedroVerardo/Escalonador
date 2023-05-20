@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <pthread.h>
 #include "data_structures.h"
 
 Queue roundRobin;
@@ -15,6 +16,8 @@ Node* realTime;
 
 Node* next_realTime;
 Process* current_process;
+
+int second_reference;
 
 void runNextRealTime();
 void runNextRoundRobin(int second_reference);
@@ -126,15 +129,14 @@ void updateRunningProcess(int second_reference) {
             }
         }
         if (!is_empty(&roundRobin)) {
-            runNextRoundRobin(second_reference);;
-        }   
+            runNextRoundRobin(second_reference); 
+        } 
         return;     
     }
         
-
+    // printf("oi\n"); 
     if (current_process->end_time == second_reference) {
         // precisamos escolher o novo processo a ser executado
-
         // stop o current process
         if (kill(current_process->pid, SIGSTOP) == -1) {
             printf("Erro no sinal SIGSTOP");
@@ -146,6 +148,10 @@ void updateRunningProcess(int second_reference) {
             enqueue(&roundRobin, current_process);
         }
 
+        if (!next_realTime) {
+            runNextRoundRobin(second_reference);
+            return;
+        }
 
         if (next_realTime->process->initial_time == second_reference) {
             // se temos um real time para começar
@@ -208,14 +214,41 @@ void schedule(Process *process_data, pid_t pid, int second_reference) {
     }
 }
 
+
+void* wait_for_IO(void *IO_process) {
+    // Wait for 3 seconds
+    sleep(3);
+    Process* ready_process = (Process*) IO_process;
+    printf("[ESCALONADOR] IO do processo %s finalizado\n", ready_process->name);
+    printf("[ESCALONADOR] adicionando o processo %s na fila de prontos\n", ready_process->name);
+    enqueue(&roundRobin, ready_process);
+    return NULL;
+}
+
+
+void handler(int signum){
+    pthread_t thread_id;
+
+    if (pthread_create(&thread_id, NULL, &wait_for_IO, current_process) != 0) {
+        printf("Failed to create thread\n");
+        return;
+    }
+
+    current_process = NULL;
+    updateRunningProcess(second_reference);
+}
+
+
 void scheduler(Process* process_data) {
     pid_t pid;
+    int scheduler_pid = getpid();
     struct timeval current_time;
-    int second_reference;
     int current_second;
 
     initialize(&roundRobin);
     realTime = initialize_list();
+
+    signal(SIGUSR1, handler);
 
     while (1) {
 
@@ -250,19 +283,27 @@ void scheduler(Process* process_data) {
                         next_realTime = realTime;
                     }
                 }
+                // printf("bla");
                 
             } else { // novo processo
                 // o processo coloca a si mesmo em pausa até que o escalonador o escalone
                 Process* self_information = createCopy(process_data);
+
+                char buffer_IO[100];
+                char buffer_pid[200];
+
+                // Convert the integer to a string
+                sprintf(buffer_IO, "%d", self_information->is_IO_bounded);
+                sprintf(buffer_pid, "%d", scheduler_pid);
+
                 char *programPath = "./new_process";  // Path to the program you want to execute
-                char *args[] = {programPath, self_information->name, NULL};  // Arguments for the program, terminated with NULL
+                char *args[] = {programPath, self_information->name, buffer_IO, buffer_pid, NULL};  // Arguments for the program, terminated with NULL
                 execvp(programPath, args);
             }
                 
         }
-  
+
         updateRunningProcess(second_reference);
-        
     }
 
 }

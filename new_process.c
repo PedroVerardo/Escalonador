@@ -6,8 +6,13 @@
 
 
 int main(int argc, char *argv[]){
+
     struct timeval start, current;
     char* name = argv[1];
+    int is_IO_bounded = atoi(argv[2]);
+    int scheduler_pid = atoi(argv[3]);
+
+
 
     if (kill(getpid(), SIGSTOP) == -1) {
         printf("Erro no sinal SIGSTOP");
@@ -22,6 +27,14 @@ int main(int argc, char *argv[]){
         if (delta >= 0.5) {
             printf("[PROCESSO %s] executando\n", name);
             gettimeofday(&start, NULL);
+        }
+        if (is_IO_bounded) {
+            printf("[PROCESSO %s] IO detectado\n", name);
+            kill(scheduler_pid, SIGUSR1);
+            if (kill(getpid(), SIGSTOP) == -1) {
+                printf("Erro no sinal SIGSTOP");
+                exit(1);
+            }
         }
     }
 }
