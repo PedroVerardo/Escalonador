@@ -129,7 +129,9 @@ void updateRunningProcess(int second_reference) {
         if (!is_empty(&roundRobin)) {
             // se temos algum round robin para começar
             runNextRoundRobin(second_reference); 
-        } 
+        }
+
+
         return;     
     }
         
