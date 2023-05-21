@@ -1,4 +1,4 @@
-Run p2
-Run p3
-Run p5 I=12 D=9
-Run p6
+Run p1 I=12 D=9
+Run p2 I=0 D=11
+Run p3 I=22 D=7
+Run p5 I=30 D=5

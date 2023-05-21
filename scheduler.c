@@ -130,10 +130,12 @@ void updateRunningProcess(int second_reference) {
         }
         if (!is_empty(&roundRobin)) {
             runNextRoundRobin(second_reference); 
-        } 
+        }
+
+
         return;     
     }
-        
+
     // printf("oi\n"); 
     if (current_process->end_time == second_reference) {
         // precisamos escolher o novo processo a ser executado
