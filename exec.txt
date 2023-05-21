@@ -1,6 +1,6 @@
-Run p2
 Run p1 I=35 D=7
-Run p5 I=12 D=9
-Run p4
+Run p2
 Run p3
+Run p5 I=12 D=9
+
 

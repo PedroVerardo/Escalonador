@@ -1,4 +1,0 @@
-/home/pedro/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/231.8770.66/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/pedro/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/231.8770.66/bin/ninja/linux/x64/ninja -G Ninja -S /home/pedro/CLionProjects/untitled -B /home/pedro/CLionProjects/untitled/cmake-build-debug
--- Configuring done
--- Generating done
--- Build files have been written to: /home/pedro/CLionProjects/untitled/cmake-build-debug
