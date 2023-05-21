@@ -11,32 +11,28 @@
 #include <pthread.h>
 #include "data_structures.h"
 
+// definindo as estruturas de dados que represetam as filas de prontos
 Queue roundRobin;
 Node* realTime;
 
+// guardamos um ponteiro para o próximo processo realtime que será executado
+// ex: p1 tem inicio em 9 e p2 em 23
+// se estamos no segundo 15, next_realTime = &p2
 Node* next_realTime;
+
+// guardamos umponteiro para o processo que esta executando no momento corrente
 Process* current_process;
 
+// referência para sabermos o segundo atual dentro do cilco 0 - 59
 int second_reference;
 
+// definição de funções
 void runNextRealTime();
 void runNextRoundRobin(int second_reference);
 
-void P(char* name) {
-    struct timeval start, current;
-    printf("[PROCESSO %s] iniciado execucao\n", name);
-    gettimeofday(&start, NULL);
-    while(1){
-        gettimeofday(&current, NULL);
-        double elapsed = (current.tv_sec - start.tv_sec) + (current.tv_usec - start.tv_usec) / 1000000.0;
-        if (elapsed >= 0.5) {
-            printf("[PROCESSO %s] executando\n", name);
-            gettimeofday(&start, NULL);
-        }
-    }
-}
-
-// função para saber se o realtime recem escalonado deve ser o próximo da lista
+// quando recebemos um novo processo realtime, devemos verificar se 
+// ele deverá ser executado antes do next_realTime guardado
+// A função abaixo retorna qual deve ser o próximo real time a ser executado
 Node* get_closer(int time_reference, Node* p1, Node* p2) {
     
     // o p2 é o recém inserido
@@ -46,19 +42,16 @@ Node* get_closer(int time_reference, Node* p1, Node* p2) {
 
     int n1 = p1->process->initial_time;
     int n2 = p2->process->initial_time;
-    int t1 = time_reference;
-    int t2 = time_reference;
+    int t = time_reference;
 
-    if (t1 > n1)
+    if (t > n1)
         n1 += 60;
     
-    if (t2 > n2)
+    if (t > n2)
         n2 += 60;
 
-    int diff1 = n1 - t1;
-    int diff2 = n2 - t2;
-
-    // printf("diff1 = %d, diff2 = %d\n", diff1, diff2);
+    int diff1 = n1 - t;
+    int diff2 = n2 - t;
 
     if (diff1 >= diff2)
         return p2;
@@ -68,7 +61,8 @@ Node* get_closer(int time_reference, Node* p1, Node* p2) {
 
 
 
-//this function return true if the process can be sheduled.
+// precisamos verificar se um novo processo realtime é compatível com os demais
+// a função indica se existe algum tempo conflitante entre eles
 int possibleToScheduled(Node* head, Process real_time_process){
     if(head == NULL){
         return 1;
@@ -100,11 +94,13 @@ int possibleToScheduled(Node* head, Process real_time_process){
     return 1;
 }
 
+// vamos criar uma cópia do processo passado na memória compartilhada
+// para que o escalonadro possa armazenar os dados dos processos corretamente
 Process* createCopy(Process* original) {
-    // Allocate memory for the new struct
+
     Process* copy = (Process*)malloc(sizeof(Process));
 
-    // Copy the data from the original struct to the new copy
+    // Copiando as informações do processo original
     if (copy != NULL) {
         strcpy(copy->name, original->name);
         copy->initial_time = original->initial_time;
@@ -119,6 +115,8 @@ Process* createCopy(Process* original) {
     return copy;
 }
 
+// a rotina abaixo define se um novo processo deve ser executado e
+// em caso positivo, define e inicia a execução do novo processo
 void updateRunningProcess(int second_reference) {
     if (!current_process) {
         if (next_realTime) {
@@ -129,14 +127,16 @@ void updateRunningProcess(int second_reference) {
             }
         }
         if (!is_empty(&roundRobin)) {
+            // se temos algum round robin para começar
             runNextRoundRobin(second_reference); 
         } 
         return;     
     }
         
-    // printf("oi\n"); 
+    // se chegou estamos no final do time slice do processo atual
+     // precisamos escolher o novo processo a ser executado
     if (current_process->end_time == second_reference) {
-        // precisamos escolher o novo processo a ser executado
+       
         // stop o current process
         if (kill(current_process->pid, SIGSTOP) == -1) {
             printf("Erro no sinal SIGSTOP");
@@ -148,15 +148,19 @@ void updateRunningProcess(int second_reference) {
             enqueue(&roundRobin, current_process);
         }
 
+        current_process = NULL;
+
         if (!next_realTime) {
+            // se não temos realtimes na fila de prontos, executamos um round robin
             runNextRoundRobin(second_reference);
             return;
         }
 
         if (next_realTime->process->initial_time == second_reference) {
-            // se temos um real time para começar
+            // se temos um real time para começar, o executamos
             runNextRealTime();
         } else {
+            // se não, executamos o próximo round robin
             runNextRoundRobin(second_reference);
         }
     }
@@ -176,6 +180,9 @@ void runNextRealTime() {
 }
 
 void runNextRoundRobin(int second_reference) {
+
+    if (is_empty(&roundRobin))
+        return;
     // rodar proximo da fila roundrobin
     Process* first_roundRobin = dequeue(&roundRobin);
     printf("[ESCALONADOR] executando o processo %s (round robin)\n", first_roundRobin->name);
@@ -189,35 +196,37 @@ void runNextRoundRobin(int second_reference) {
     current_process = first_roundRobin;
 }
 
+// a rotina implementa os tratamentos necessários quando um novo processo é recebido
 void schedule(Process *process_data, pid_t pid, int second_reference) {
 
     process_data->pid = pid;
+
+    // informamos ao escalonador que ela já foi tratada
     process_data->already_scheduled = 1;
 
+    // criamos uma cópia a ser armazenada pelo escalonador
     Process* new_process = createCopy(process_data);
 
-    if (new_process->initial_time == -1) { // round robin
+    if (new_process->initial_time == -1) { // se round robin, adicionamos na fila de prontos
         printf("[ESCALONADOR] alocando %s na fila de prontos round robin\n", process_data->name);
         enqueue(&roundRobin, new_process);
 
-    } else { // real time
+    } else { // se real time, verificamos os conflitos
         if(!possibleToScheduled(realTime, *process_data)){
             printf("[ESCALONADOR] [TEMPOS INCOMPATIVEIS] nao foi possivel alocar %s na fila de prontos real time\n", process_data->name);
         }
-        else{
-            printf("[ESCALONADOR] alocando %s na fila de prontos real time\n", process_data->name);
-            // precisamos ajustar o próximo real time a ser executado;
-            
+        else{ // se não há conflitos, inserimos na fila de prontos do realtime e atualizamos o próximo a executar
+            printf("[ESCALONADOR] alocando %s na fila de prontos real time\n", process_data->name);    
             Node* inserted = insert_ordered(&realTime, new_process);
             next_realTime = get_closer(second_reference, next_realTime, inserted);
         }
     }
 }
 
-
+// a rotina é executada em um thread que o simula a presença do IO
 void* wait_for_IO(void *IO_process) {
-    // Wait for 3 seconds
     sleep(3);
+    // após aguardar o tempo de IO, botamos o processo de volta na fila
     Process* ready_process = (Process*) IO_process;
     printf("[ESCALONADOR] IO do processo %s finalizado\n", ready_process->name);
     printf("[ESCALONADOR] adicionando o processo %s na fila de prontos\n", ready_process->name);
@@ -225,33 +234,40 @@ void* wait_for_IO(void *IO_process) {
     return NULL;
 }
 
-
+// o handler é acionado quando o processo em excução reconhece a presença de um IO
 void handler(int signum){
     pthread_t thread_id;
 
+    // criamos um thread para simular o IO
     if (pthread_create(&thread_id, NULL, &wait_for_IO, current_process) != 0) {
         printf("Failed to create thread\n");
         return;
     }
 
+    // retiramos o processo em IO do processo corrente e atualizamos o processo a ser executado
     current_process = NULL;
     updateRunningProcess(second_reference);
 }
 
-
+// BLOCO PRINCIPAL: ESCALONADOR
 void scheduler(Process* process_data) {
     pid_t pid;
     int scheduler_pid = getpid();
     struct timeval current_time;
     int current_second;
 
+    // inicializamos as filas de prontos
     initialize(&roundRobin);
     realTime = initialize_list();
 
+    // definimos o handler para o sinal de IO (recebido diretamente dos processos)
     signal(SIGUSR1, handler);
 
+    // loop contínuo
     while (1) {
 
+        // verificamos o tempo a cada iteração
+        // se o segundo atual mudar, atualizamos o clock
         if (gettimeofday(&current_time, NULL) == -1) {
             printf("Erro na verificação do horário");
             exit(1);
@@ -271,10 +287,11 @@ void scheduler(Process* process_data) {
                 printf("Erro na criação de novo processo");
                 exit(1);
             } else if (pid > 0) { // escalonador
+                // tratamentos preliminares do processo
                 schedule(process_data, pid, second_reference);
 
-                if (!current_process && !next_realTime) {
-                    // se for o primeiro processo de todos
+                // se for o primeiro processo de todos
+                if (!current_process && !next_realTime) {     
                     if (process_data->initial_time == -1) {
                         // caso seja um round robin
                         runNextRoundRobin(second_reference);
@@ -283,26 +300,29 @@ void scheduler(Process* process_data) {
                         next_realTime = realTime;
                     }
                 }
-                // printf("bla");
                 
             } else { // novo processo
-                // o processo coloca a si mesmo em pausa até que o escalonador o escalone
+                // O novo processo também cria uma cópia para obter um referência de suas informações
                 Process* self_information = createCopy(process_data);
 
-                char buffer_IO[100];
-                char buffer_pid[200];
+                // criamos buffers para passar inteiro como parâmetros via argv
+                char buffer_IO[10];
+                char buffer_pid[10];
 
-                // Convert the integer to a string
+                // convertemos os inteiros para strings por meio dos buffers
                 sprintf(buffer_IO, "%d", self_information->is_IO_bounded);
                 sprintf(buffer_pid, "%d", scheduler_pid);
 
-                char *programPath = "./new_process";  // Path to the program you want to execute
-                char *args[] = {programPath, self_information->name, buffer_IO, buffer_pid, NULL};  // Arguments for the program, terminated with NULL
+                // definimos os parâmetros para executar o programa externo
+                char *programPath = "./new_process"; 
+                char *args[] = {programPath, self_information->name, buffer_IO, buffer_pid, NULL};
                 execvp(programPath, args);
             }
                 
         }
 
+        // se estiver no momento de atulizar o processo em execução,
+        // realizamos a atualização
         updateRunningProcess(second_reference);
     }
 
